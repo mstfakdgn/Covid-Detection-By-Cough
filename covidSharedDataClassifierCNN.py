@@ -148,6 +148,25 @@ def plot_history(history):
     axs[1].set_title("Error eval")
 
     plt.show()
+def statistics(type, pred, real):
+
+    auc_score=roc_auc_score(real,pred)
+    if type == 'test':
+        print('Test AUC:', auc_score)
+    elif type == 'train':
+        print('Train AUC:', auc_score)
+
+    confusion_matrix_results = confusion_matrix(real, pred)
+    if type == 'test':
+        print('Test Confusion Matrix:', confusion_matrix_results)
+    elif type == 'train':
+        print('Train Confusion Matrix:', confusion_matrix_results)
+
+    report = classification_report(real, pred, target_names=["covid", "not covid"])
+    if type == 'test':
+        print('Test Report:', report)
+    elif type == 'train':
+        print('Train Report:', report)
 
 if __name__ == "__main__":
     
@@ -163,7 +182,7 @@ if __name__ == "__main__":
     model.compile(optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
     # train the CNN
-    history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=50)
+    history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=5)
 
     # evaluate the CNN on the test set
     test_error, test_accuracy = model.evaluate(X_test, y_test, verbose=1)
@@ -174,37 +193,34 @@ if __name__ == "__main__":
     X = X_test[2]
     y = y_test[2]
 
-    predict(model, X,y)
+    #predict(model, X,y)
     #plot the accuracy and error over the epochs
     plot_history(history)
-
-    y_pred_all=model.predict_proba(X_test)
-    y_pred_index = np.array([])
-    for pred in y_pred_all:
+    
+    y_pred_train = model.predict_proba(X_train)
+    y_pred_train_index = np.array([])
+    for pred in y_pred_train:
         predicted_index = np.argmax(pred, axis=0)
-        y_pred_index = np.append(y_pred_index, predicted_index)
-        
-    auc_score=roc_auc_score(y_test,y_pred_index)
-    print('AUC:', auc_score)
+        y_pred_train_index = np.append(y_pred_train_index, predicted_index)
 
-    plt.style.use('seaborn')
+    auc_score_train=roc_auc_score(X_train,y_pred_train_index)
+    print('AUC Score Train: ', auc_score_train)
 
-    # roc curve for models
-    fpr1, tpr1, thresh1 = roc_curve(y_test, y_pred_index)
+    y_pred_validation = model.predict_proba(X_validation)
+    y_pred_validation_index = np.array([])
+    for pred in y_pred_validation:
+        predicted_index = np.argmax(pred, axis=0)
+        y_pred_validation_index = np.append(y_pred_validation_index, predicted_index)
 
-    # plot roc curves
-    plt.plot(fpr1, tpr1, linestyle='--',color='orange', label='CNN')
-    # title
-    plt.title('ROC curve')
-    # x label
-    plt.xlabel('False Positive Rate')
-    # y label
-    plt.ylabel('True Positive rate')
+    auc_score_validation=roc_auc_score(X_validation,y_pred_validation_index)
+    print('AUC Score Validation: ', auc_score_validation)
 
-    plt.legend(loc='best')
-    plt.savefig('ROC',dpi=300)
-    plt.show();
-
-    print(confusion_matrix(y_test, y_pred_index))
-    report = classification_report(y_test, y_pred_index, target_names=["covid", "not covid"])
-    print(report) 
+    y_pred_test=model.predict_proba(X_test)
+    y_pred_test_index = np.array([])
+    for pred in y_pred_test:
+        predicted_index = np.argmax(pred, axis=0)
+        y_pred_test_index = np.append(y_pred_test_index, predicted_index)
+    
+    auc_score_test=roc_auc_score(X_test,y_pred_test_index)
+    print('AUC Score Test: ', auc_score_test)
+         
