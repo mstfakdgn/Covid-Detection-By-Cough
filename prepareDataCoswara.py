@@ -19,7 +19,7 @@ def extract_features(file_name, n_mfcc=13, hop_length=512, n_fft=2048):
                                             hop_length=hop_length)
         except Exception as e:
             print("Error encountered while parsing file: ", e)
-            return None, sr
+            return None, None
 
         return mfccs, sr
 

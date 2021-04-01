@@ -81,12 +81,12 @@ def build_model(input_shape):
 
 
     # 1st conv layer
-    model.add(keras.layers.Conv2D(32, (3,3), activation="relu", input_shape=input_shape, kernel_regularizer=keras.regularizers.l2(0.001)))
+    model.add(keras.layers.Conv2D(32, (3,3), activation="relu", input_shape=input_shape))
         # max pooling
     model.add(keras.layers.MaxPool2D((3,3), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
     model.add(keras.layers.BatchNormalization())
-    model.add(keras.layers.Dropout(0.1))
+    # model.add(keras.layers.Dropout(0.1))
 
 
     # 2nd conv layer
@@ -95,11 +95,11 @@ def build_model(input_shape):
     model.add(keras.layers.MaxPool2D((3,3), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
     model.add(keras.layers.BatchNormalization())
-    model.add(keras.layers.Dropout(0.1))
+    # model.add(keras.layers.Dropout(0.1))
 
 
     # 3rd conv layer
-    model.add(keras.layers.Conv2D(32, (2,2), activation="relu", input_shape=input_shape, kernel_regularizer=keras.regularizers.l2(0.001)))
+    model.add(keras.layers.Conv2D(32, (2,2), activation="relu", input_shape=input_shape))
         # max pooling
     model.add(keras.layers.MaxPool2D((2,2), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     model.compile(optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
     # train the CNN
-    history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=100)
+    history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=50)
 
     # evaluate the CNN on the test set
     test_error, test_accuracy = model.evaluate(X_test, y_test, verbose=1)
