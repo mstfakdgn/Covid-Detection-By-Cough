@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score, KFold
 from sklearn.preprocessing import LabelEncoder
 import tensorflow.keras as keras
 from keras.utils import to_categorical
@@ -10,8 +10,7 @@ import pdb;
 import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import roc_curve, auc,roc_auc_score
-from sklearn.model_selection import cross_val_score
-from sklearn.metrics import roc_curve, confusion_matrix, classification_report
+from sklearn.metrics import roc_curve, confusion_matrix, classification_report, precision_recall_curve
 import matplotlib.pyplot as plt
 
 
@@ -95,7 +94,7 @@ def build_model(input_shape):
     model.add(keras.layers.MaxPool2D((3,3), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
     model.add(keras.layers.BatchNormalization())
-    # model.add(keras.layers.Dropout(0.1))
+    model.add(keras.layers.Dropout(0.1))
 
 
     # 3rd conv layer
@@ -168,6 +167,15 @@ def statistics(type, pred, real):
     elif type == 'train':
         print('Train Report:', report)
 
+def plot_roc_curve(fpr, tpr):
+    plt.plot(fpr, tpr, color='orange', label='ROC')
+    plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend()
+    plt.show()
+
 if __name__ == "__main__":
     
     # create train, validation and test sets # test_size, validation_size
@@ -182,45 +190,98 @@ if __name__ == "__main__":
     model.compile(optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
     # train the CNN
-    history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=5)
+    history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=100)
 
     # evaluate the CNN on the test set
     test_error, test_accuracy = model.evaluate(X_test, y_test, verbose=1)
     print('Accuracy Test {}'.format(test_accuracy))
     print('Error Test {}'.format(test_error))
     
-    # make prediction on a sample
-    X = X_test[2]
-    y = y_test[2]
+    # # make prediction on a sample
+    # X = X_test[2]
+    # y = y_test[2]
 
     #predict(model, X,y)
     #plot the accuracy and error over the epochs
     plot_history(history)
     
     y_pred_train = model.predict_proba(X_train)
+    y_pred_train = y_pred_train[:, 0:2]
     y_pred_train_index = np.array([])
     for pred in y_pred_train:
         predicted_index = np.argmax(pred, axis=0)
         y_pred_train_index = np.append(y_pred_train_index, predicted_index)
 
-    auc_score_train=roc_auc_score(X_train,y_pred_train_index)
+    auc_score_train = roc_auc_score(y_train,y_pred_train_index)
     print('AUC Score Train: ', auc_score_train)
 
+    confusion_matrix_results = confusion_matrix(y_train, y_pred_train_index)
+    print('Train Confusion Matrix:')
+    print(confusion_matrix_results)
+
+    report_train = classification_report(y_train, y_pred_train_index, target_names=["covid", "not covid"])
+    print('Report:', report_train)
+
+
+
     y_pred_validation = model.predict_proba(X_validation)
+    y_pred_validation = y_pred_validation[:, 0:2]
     y_pred_validation_index = np.array([])
     for pred in y_pred_validation:
         predicted_index = np.argmax(pred, axis=0)
         y_pred_validation_index = np.append(y_pred_validation_index, predicted_index)
 
-    auc_score_validation=roc_auc_score(X_validation,y_pred_validation_index)
+    auc_score_validation=roc_auc_score(y_validation,y_pred_validation_index)
     print('AUC Score Validation: ', auc_score_validation)
 
+    confusion_matrix_results = confusion_matrix(y_validation, y_pred_validation_index)
+    print('Validation Confusion Matrix:')
+    print(confusion_matrix_results)
+
+    report_validation = classification_report(y_validation, y_pred_validation_index, target_names=["covid", "not covid"])
+    print('Report:', report_validation)
+
+
     y_pred_test=model.predict_proba(X_test)
+    y_pred_test = y_pred_test[:, 0:2]
     y_pred_test_index = np.array([])
     for pred in y_pred_test:
         predicted_index = np.argmax(pred, axis=0)
         y_pred_test_index = np.append(y_pred_test_index, predicted_index)
     
-    auc_score_test=roc_auc_score(X_test,y_pred_test_index)
+    auc_score_test=roc_auc_score(y_test,y_pred_test_index)
     print('AUC Score Test: ', auc_score_test)
-         
+
+    confusion_matrix_results = confusion_matrix(y_test, y_pred_test_index)
+    print('Test Confusion Matrix:')
+    print(confusion_matrix_results)
+
+    report_test = classification_report(y_test, y_pred_test_index, target_names=["covid", "not covid"])
+    print('Report:', report_test)
+
+    fpr_train, tpr_train, thresholds_train = roc_curve(y_train, y_pred_train_index)
+    fpr_validation, tpr_validation, thresholds_validation = roc_curve(y_validation, y_pred_validation_index)
+    fpr_test, tpr_test, thresholds_test = roc_curve(y_test, y_pred_test_index)
+
+
+    plt.plot(fpr_train, tpr_train, linestyle='--', color='orange', label='Train')
+    plt.plot(fpr_validation, tpr_validation, linestyle='--', color='green', label='Validation')
+    plt.plot(fpr_test, tpr_test, linestyle='--', color='red', label='Test')
+    plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend()
+    plt.show()
+
+    train_precision, train_recall, _ = precision_recall_curve(y_train, y_pred_train_index)
+    validation_precision, validation_recall, _ = precision_recall_curve(y_validation, y_pred_validation_index)
+    test_precision, test_recall, _ = precision_recall_curve(y_test, y_pred_test_index)
+
+    plt.plot(train_recall, train_precision, marker='.', label='Train')
+    plt.plot(validation_recall, validation_precision, marker='.', label='Validation')
+    plt.plot(test_recall, test_precision, marker='.', label='Test')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend()
+    plt.show()

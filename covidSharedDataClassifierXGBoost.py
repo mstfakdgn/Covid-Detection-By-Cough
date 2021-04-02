@@ -9,11 +9,12 @@ import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import roc_curve, auc,roc_auc_score
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import mean_squared_error, r2_score, confusion_matrix, accuracy_score, classification_report, roc_auc_score,roc_curve
+from sklearn.metrics import mean_squared_error, r2_score, confusion_matrix, accuracy_score, classification_report, roc_auc_score,roc_curve, precision_recall_curve
 import matplotlib.pyplot as plt
 from xgboost import XGBClassifier
 from sklearn.model_selection import GridSearchCV
 from matplotlib import pyplot
+import matplotlib.pyplot as plt
 
 DATA_PATH="data.json"
 
@@ -84,36 +85,65 @@ if __name__ == "__main__":
     print('Accuracy:', accuracy_score(y_pred, y_test))
     print('Error:', np.sqrt(mean_squared_error(y_test, y_pred)))
 
-    y_pred_all=xgb_model.predict_proba(X_test)
-    y_pred_index = np.array([])
-    for pred in y_pred_all:
+    y_pred_train = xgb_model.predict_proba(X_train)
+    y_pred_train = y_pred_train[:, 0:2]
+    y_pred_train_index = np.array([])
+    for pred in y_pred_train:
         predicted_index = np.argmax(pred, axis=0)
-        y_pred_index = np.append(y_pred_index, predicted_index)
+        y_pred_train_index = np.append(y_pred_train_index, predicted_index)
 
-    auc_score=roc_auc_score(y_test,y_pred_index)
-    print('AUC:', auc_score)
+    auc_score_train = roc_auc_score(y_train,y_pred_train_index)
+    print('AUC Score Train: ', auc_score_train)
 
-    plt.style.use('seaborn')
+    confusion_matrix_results = confusion_matrix(y_train, y_pred_train_index)
+    print('Train Confusion Matrix:')
+    print(confusion_matrix_results)
 
-    # roc curve for models
-    fpr1, tpr1, thresh1 = roc_curve(y_test, y_pred_index)
+    report_train = classification_report(y_train, y_pred_train_index, target_names=["covid", "not covid"])
+    print('Report:', report_train)
 
-    # plot roc curves
-    plt.plot(fpr1, tpr1, linestyle='--',color='orange', label='CNN')
-    # title
-    plt.title('ROC curve')
-    # x label
+
+
+    y_pred_test=xgb_model.predict_proba(X_test)
+    y_pred_test = y_pred_test[:, 0:2]
+    y_pred_test_index = np.array([])
+    for pred in y_pred_test:
+        predicted_index = np.argmax(pred, axis=0)
+        y_pred_test_index = np.append(y_pred_test_index, predicted_index)
+    
+    auc_score_test=roc_auc_score(y_test,y_pred_test_index)
+    print('AUC Score Test: ', auc_score_test)
+
+    confusion_matrix_results = confusion_matrix(y_test, y_pred_test_index)
+    print('Test Confusion Matrix:')
+    print(confusion_matrix_results)
+
+    report_test = classification_report(y_test, y_pred_test_index, target_names=["covid", "not covid"])
+    print('Report:', report_test)
+
+    fpr_train, tpr_train, thresholds_train = roc_curve(y_train, y_pred_train_index)
+    fpr_test, tpr_test, thresholds_test = roc_curve(y_test, y_pred_test_index)
+
+    plt.plot(fpr_train, tpr_train, linestyle='--', color='orange', label='Train')
+    plt.plot(fpr_test, tpr_test, linestyle='--', color='red', label='Test')
+    plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
     plt.xlabel('False Positive Rate')
-    # y label
-    plt.ylabel('True Positive rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    plt.legend()
+    plt.show()
 
-    plt.legend(loc='best')
-    plt.savefig('ROC',dpi=300)
-    plt.show();
+    train_precision, train_recall, _ = precision_recall_curve(y_train, y_pred_train_index)
+    test_precision, test_recall, _ = precision_recall_curve(y_test, y_pred_test_index)
 
-    print('Confusion Matrix:', confusion_matrix(y_test, y_pred_index))
-    report = classification_report(y_test, y_pred_index, target_names=["covid", "not covid"])
-    print('Report:', report)
+    plt.plot(train_recall, train_precision, marker='.', label='Train')
+    plt.plot(test_recall, test_precision, marker='.', label='Test')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend()
+    plt.show()
+
+
 
     # #Tuning
     # xgb_grid = {
