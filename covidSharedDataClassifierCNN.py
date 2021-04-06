@@ -322,7 +322,7 @@ if __name__ == "__main__":
             
     plt.show()
 
-    with open("./raports.json", "w") as fp:
+    with open("./raportsCNN.json", "w") as fp:
         json.dump(Raports, fp, indent=4)
 
 
