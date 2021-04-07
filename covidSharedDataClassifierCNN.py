@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 
 DATA_PATH="data.json"
+SAVED_MODEL_PATH="model.h5"
 
 def load_data(data_path):
     """Loads training dataset from json file
@@ -325,4 +326,5 @@ if __name__ == "__main__":
     with open("./raportsCNN.json", "w") as fp:
         json.dump(Raports, fp, indent=4)
 
-
+    # save model
+    model.save(SAVED_MODEL_PATH)
