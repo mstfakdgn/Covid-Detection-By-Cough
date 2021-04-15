@@ -58,12 +58,51 @@ def prepare_datasets(test_size):
     # laod data
     X, y, positiveCase = load_data(DATA_PATH)
 
-    # create the train/test split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
+    positiveIndex = []
+    negativeIndex = []
+    for i, train in enumerate(y):
+        if train == 0:
+            positiveIndex.append(i)
+        if train == 1:
+            negativeIndex.append(i)
 
-    # Add pozitive case to test
-    X_test[0] = positiveCase
-    y_test[0] = 1
+    positiveCases = X[positiveIndex]
+    negativeCases = X[negativeIndex]
+
+    positiveLabels = y[positiveIndex]
+    negativeLabels = y[negativeIndex]
+
+
+    #test   
+    n = 130
+    index = np.random.choice(positiveCases.shape[0], n, replace=False)
+    X_test_positive = positiveCases[index]
+    y_test_positive = positiveLabels[index]
+
+    n = 145
+    index = np.random.choice(negativeCases.shape[0], n, replace=False)
+    X_test_negative = negativeCases[index]
+    y_test_negative = negativeLabels[index]
+
+
+    X_test = np.concatenate((X_test_positive, X_test_negative), axis=0)
+    y_test = np.concatenate((y_test_positive, y_test_negative), axis=0)
+
+
+    #train
+    n = 528
+    index = np.random.choice(positiveCases.shape[0], n, replace=False)
+    X_train_positive = positiveCases[index]
+    y_train_positive = positiveLabels[index]
+
+    n = 587
+    index = np.random.choice(negativeCases.shape[0], n, replace=False)
+    X_train_negative = negativeCases[index]
+    y_train_negative = negativeLabels[index]
+
+
+    X_train = np.concatenate((X_train_positive, X_train_negative), axis=0)
+    y_train = np.concatenate((y_train_positive, y_train_negative), axis=0)
 
     return X_train, X_test, y_train, y_test
 
@@ -115,25 +154,12 @@ if __name__ == "__main__":
 
 
     for i in range(5):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+        X_train, X_test, y_train, y_test = prepare_datasets(0.2)
 
         eval_s = [(X_train, y_train),(X_test,y_test)]
 
-        for j,case in enumerate(y):
-            if case == 1:
-                y_test[0] = 1
-                X_test[0] = X[j]
-                y_train[0] = 1
-                X_train[0] = X[j]
-            elif case == 0:
-                y_test[1] = 0
-                X_test[1] = X[j]
-                y_train[1] = 0
-                X_train[1] = X[j]
-
         xgb_model = XGBClassifier().fit(X_train, y_train, eval_set=eval_s)
         
-
         y_pred_train = xgb_model.predict_proba(X_train)
         y_pred_train = y_pred_train[:, 0:2]
         y_pred_train_index = np.array([])

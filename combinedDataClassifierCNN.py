@@ -95,12 +95,12 @@ def prepare_datasets(test_size, validation_size):
 
 
     #validation
-    n = 130
+    n = 105
     index = np.random.choice(positiveCases.shape[0], n, replace=False)
     X_validation_positive = positiveCases[index]
     y_validation_positive = positiveLabels[index]
 
-    n = 145
+    n = 117
     index = np.random.choice(negativeCases.shape[0], n, replace=False)
     X_validation_negative = negativeCases[index]
     y_validation_negative = negativeLabels[index]
@@ -111,12 +111,12 @@ def prepare_datasets(test_size, validation_size):
 
 
     #train
-    n = 398
+    n = 423
     index = np.random.choice(positiveCases.shape[0], n, replace=False)
     X_train_positive = positiveCases[index]
     y_train_positive = positiveLabels[index]
 
-    n = 442
+    n = 470
     index = np.random.choice(negativeCases.shape[0], n, replace=False)
     X_train_negative = negativeCases[index]
     y_train_negative = negativeLabels[index]
