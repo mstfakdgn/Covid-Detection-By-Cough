@@ -33,13 +33,13 @@ def load_data(data_path):
         if np.array(mfcc).shape == (431, 13):
             mfccsArray.append(mfcc)
         elif np.array(mfcc).shape[0] < 431:
-            zeros = np.zeros([431,13])
-            zeros[:np.array(mfcc).shape[0], :np.array(mfcc).shape[1]] = np.array(mfcc)
-            mfccsArray.append(zeros)
+            mean = np.mean(np.array(mfcc))
+            means = np.full([431,13], mean)
+            means[:np.array(mfcc).shape[0], :np.array(mfcc).shape[1]] = np.array(mfcc)
+            mfccsArray.append(means)
         elif np.array(mfcc).shape[0] > 431:
             mfccArray = np.array(mfcc)
             mfccsArray.append(mfccArray[:431, :13])
-        
 
     X = np.array(mfccsArray)
 
@@ -78,49 +78,60 @@ def prepare_datasets(test_size, validation_size):
     positiveLabels = y[positiveIndex]
     negativeLabels = y[negativeIndex]
 
+    # pdb.set_trace()  
+
     #test   
-    n = 130
+    n = 155
     index = np.random.choice(positiveCases.shape[0], n, replace=False)
     X_test_positive = positiveCases[index]
     y_test_positive = positiveLabels[index]
+    positiveCases = np.delete(positiveCases, index, axis=0)
+    positiveLabels = np.delete(positiveLabels, index, axis=0)
 
-    n = 145
+    n = 175
     index = np.random.choice(negativeCases.shape[0], n, replace=False)
     X_test_negative = negativeCases[index]
     y_test_negative = negativeLabels[index]
+    negativeCases = np.delete(negativeCases, index, axis=0)
+    negativeLabels = np.delete(negativeLabels, index, axis=0)
 
 
     X_test = np.concatenate((X_test_positive, X_test_negative), axis=0)
     y_test = np.concatenate((y_test_positive, y_test_negative), axis=0)
 
-
     #validation
-    n = 105
+    n = 129
     index = np.random.choice(positiveCases.shape[0], n, replace=False)
-    X_validation_positive = positiveCases[index]
+    X_validation_positive = positiveCases[index] 
     y_validation_positive = positiveLabels[index]
+    positiveCases = np.delete(positiveCases, index, axis=0)
+    positiveLabels = np.delete(positiveLabels, index, axis=0)
 
-    n = 117
+    n = 146
     index = np.random.choice(negativeCases.shape[0], n, replace=False)
     X_validation_negative = negativeCases[index]
     y_validation_negative = negativeLabels[index]
-
+    negativeCases = np.delete(negativeCases, index, axis=0)
+    negativeLabels = np.delete(negativeLabels, index, axis=0)
 
     X_validation = np.concatenate((X_validation_positive, X_validation_negative), axis=0)
     y_validation = np.concatenate((y_validation_positive, y_validation_negative), axis=0)
 
 
     #train
-    n = 423
+    n = 364
     index = np.random.choice(positiveCases.shape[0], n, replace=False)
     X_train_positive = positiveCases[index]
     y_train_positive = positiveLabels[index]
+    positiveCases = np.delete(positiveCases, index, axis=0)
+    positiveLabels = np.delete(positiveLabels, index, axis=0)
 
-    n = 470
+    n = 411
     index = np.random.choice(negativeCases.shape[0], n, replace=False)
     X_train_negative = negativeCases[index]
     y_train_negative = negativeLabels[index]
-
+    negativeCases = np.delete(negativeCases, index, axis=0)
+    negativeLabels = np.delete(negativeLabels, index, axis=0)
 
     X_train = np.concatenate((X_train_positive, X_train_negative), axis=0)
     y_train = np.concatenate((y_train_positive, y_train_negative), axis=0)
@@ -139,31 +150,31 @@ def build_model(input_shape):
         # max pooling
     model.add(keras.layers.MaxPool2D((3,3), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
+    
     model.add(keras.layers.BatchNormalization())
-    # model.add(keras.layers.Dropout(0.1))
+    # model.add(keras.layers.Dropout(0.2))
 
 
     # 2nd conv layer
-    model.add(keras.layers.Conv2D(64, (3,3), activation="relu", input_shape=input_shape))
+    model.add(keras.layers.Conv2D(32, (3,3), activation="relu", input_shape=input_shape))
         # max pooling
     model.add(keras.layers.MaxPool2D((3,3), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
     model.add(keras.layers.BatchNormalization())
-    # model.add(keras.layers.Dropout(0.1))
+    # model.add(keras.layers.Dropout(0.2))
 
 
     # 3rd conv layer
-    model.add(keras.layers.Conv2D(128, (2,2), activation="relu", input_shape=input_shape))
+    model.add(keras.layers.Conv2D(32, (2,2), activation="relu", input_shape=input_shape))
         # max pooling
     model.add(keras.layers.MaxPool2D((2,2), strides=(2,2), padding="same"))
         # standartizes current layer, speed up training
     model.add(keras.layers.BatchNormalization())
     model.add(keras.layers.Dropout(0.1))
 
-
     # flatten the output and feed it into dense layer
     model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(64, activation="relu"))
+    model.add(keras.layers.Dense(32, activation="relu"))
     model.add(keras.layers.Dropout(0.1))
 
     # output layer
@@ -260,7 +271,7 @@ if __name__ == "__main__":
         "errors": []
     }
 
-    for i in range(5):
+    for i in range(1):
         # create train, validation and test sets # test_size, validation_size
         X_train, X_validation, X_test, y_train, y_validation, y_test = prepare_datasets(0.2, 0.2)
 
@@ -269,10 +280,18 @@ if __name__ == "__main__":
         model = build_model(input_shape)
 
         # compile the network
-        optimizer = keras.optimizers.Adam(lr=0.0001)
+        optimizer = keras.optimizers.Adam(lr=0.001)
         model.compile(optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
         # train the CNN
+
+        # early stop callbacks=[es_callback]
+        # es_callback = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0,
+        #                                                 patience=0,
+        #                                                 verbose=0,
+        #                                                 mode="auto",
+        #                                                 baseline=None)
+
         history = model.fit(X_train, y_train, validation_data=(X_validation, y_validation), batch_size=32, epochs=100)
         
         #plot the accuracy and error over the epochs

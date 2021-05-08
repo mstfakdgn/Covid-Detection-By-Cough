@@ -35,13 +35,15 @@ def prepare_dataset(dataset_path, json_path, n_mfcc=13, hop_length=512, n_fft=20
             csv_reader = csv.reader(dataset, delimiter=',')
             index = 1
 
-            for row in csv_reader:
+            for i, row in enumerate(csv_reader):
                 file_properties = row[0]
                 file_name = os.getcwd()+'/covid_shared_data/audio/'+file_properties
                 class_label = row[1]
                 data, sr = extract_features(file_name)
                 #print(data)
                 if data is not None:
+                    print("index:",i, "shape:", np.array(data).T.shape)
+
                     dataPackage['MFCCs'].append(data.T.tolist())
                     dataPackage['labels'].append(class_label)
 
